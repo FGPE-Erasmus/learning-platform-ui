@@ -1,0 +1,8 @@
+export default {
+    api: {
+        url: 'http://localhost:9000/api/',
+    },
+    fpge: {
+        url: 'http://fgpe.dcc.fc.up.pt:80/api'
+    }
+}
