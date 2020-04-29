@@ -1,112 +1,49 @@
 <template>
   <div class="container emp-profile">
     <div>
-      <ul class="nav nav-tabs" id="profile-tabs" role="tablist">
-        <li class="nav-item">
-          <a
-            class="nav-link active"
-            id="profile-tab"
-            data-toggle="tab"
-            href="#profile"
-            role="tab"
-            aria-controls="profile"
-            aria-selected="false"
-          >Profile</a>
-        </li>
-        <li class="nav-item">
-          <a
-            class="nav-link"
-            id="statistics-tab"
-            data-toggle="tab"
-            href="#statistics"
-            role="tab"
-            aria-controls="statistics"
-            aria-selected="false"
-          >Statistics</a>
-        </li>
-      </ul>
-      <div class="tab-content" id="profile-tab-content">
-        <div class="tab-pane  active" id="profile" role="tabpanel" aria-labelledby="profile-tab">
-          <div class="table-responsive">
-            <table class="table mt-2" id="profile-table" width="100%" cellspacing="0">
-              <tbody>
-                <tr>
-                  <td>First name</td>
-                  <td> {{ this.getUserMe.first_name }}</td>
-                </tr>
-                <tr>
-                  <td>Last name</td>
-                  <td>{{ this.getUserMe.last_name }}</td>
-                </tr>
-                <tr>
-                  <td>Email</td>
-                  <td>{{ this.getUserMe.email }}</td>
-                </tr>
-                <tr>
-                  <td>Phone number</td>
-                  <td>{{ this.getUserMe.phone_num || '-' }}</td>
-                </tr>
-                <tr>
-                  <td>Facebook</td>
-                  <td>{{ this.getUserMe.facebook_id || '-' }}</td>
-                </tr>
-                <tr>
-                  <td>Google</td>
-                  <td>{{ this.getUserMe.google_id || '-' }}</td>
-                </tr>
-                <tr>
-                  <td>Twitter</td>
-                  <td>{{ this.getUserMe.twitter_id || '-' }}</td>
-                </tr>
-                <tr>
-                  <td>Github</td>
-                  <td>{{ this.getUserMe.github_id || '-' }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <div class="mb-2 mt-2 float-right">
-            <router-link class="btn btn-outline-primary" :to="{ name: 'profileEdit' }">
-              Edit
-            </router-link>
-          </div>
-        </div>
-        <div
-          class="tab-pane fade"
-          id="statistics"
-          role="tabpanel"
-          aria-labelledby="statistics-tab"
-        >
-          <div class="tab-pane  active" id="profile" role="tabpanel" aria-labelledby="profile-tab">
-            <div class="table-responsive">
-              <table class="table mt-2" id="profile-table" width="100%" cellspacing="0">
-                <tbody>
-                  <tr>
-                    <td>Interface lang</td>
-                    <td>{{ this.getUserMeProfile.interface_lang }}</td>
-                  </tr>
-                  <tr>
-                    <td>Level</td>
-                    <td>{{ this.getUserMeProfile.level }}</td>
-                  </tr>
-                  <tr>
-                    <td>points</td>
-                    <td>{{ this.getUserMeProfile.points }}</td>
-                  </tr>
-                  <tr>
-                    <td>Badges</td>
-                    <td v-if="getUserMeProfile.badges">
-                      <ul>
-                        <li v-for="badge in getUserMeProfile.badges" :key="badge.id">{{ badge.name }}</li>
-                      </ul>
-                    </td>
-                    <td v-else>-</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
+      <div class="table-responsive">
+        <table class="table mt-2" id="profile-table" width="100%" cellspacing="0">
+          <tbody>
+            <tr>
+              <td>{{$t('firstName')}}</td>
+              <td> {{ this.getUserMe.first_name }}</td>
+            </tr>
+            <tr>
+              <td>{{$t('lastName')}}</td>
+              <td>{{ this.getUserMe.last_name }}</td>
+            </tr>
+            <tr>
+              <td>{{($t('email'))}}</td>
+              <td>{{ this.getUserMe.username }}</td>
+            </tr>
+            <tr>
+              <td>{{$t('lang')}}</td>
+              <td>{{ this.getUserMe.interface_lang }}</td>
+            </tr>
+            <tr>
+              <td>{{$t('level')}}</td>
+              <td>{{ this.getUserMe.level }}</td>
+            </tr>
+            <tr>
+              <td>{{$t('points')}}</td>
+              <td>{{ this.getUserMe.points }}</td>
+            </tr>
+            <tr>
+              <td>{{$t('badges')}}</td>
+              <td v-if="getUserMe.badges">
+                <ul>
+                  <li v-for="badge in getUserMe.badges" :key="badge.id">{{ badge.name }}</li>
+                </ul>
+              </td>
+              <td v-else>-</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="mb-2 mt-2 float-right">
+        <router-link class="btn btn-outline-primary" :to="{ name: 'profileEdit' }">
+          {{$t('edit')}}
+        </router-link>
       </div>
     </div>
   </div>
@@ -128,13 +65,12 @@ export default {
     }
   },
 
-  created() {
+  mounted() {
     this.fetchUserMe();
-    this.fetchUserMeProfile();
   },
 
   computed: {
-    ...mapGetters(["getUserMe", "getUserMeProfile"]),
+    ...mapGetters(["getUserMe"]),
     interface_lang: function() {
       return $store.state.interface_lang;
     },
@@ -159,7 +95,7 @@ export default {
   },
 
   methods: {
-    ...mapActions(["fetchUserMe", "fetchUserMeProfile"])
+    ...mapActions(["fetchUserMe"])
   }
 };
 </script>

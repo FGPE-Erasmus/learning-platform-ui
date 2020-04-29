@@ -1,5 +1,4 @@
 import axios from 'axios'
-import getApiUrl from '../urls'
 
 const state = {
   course: {},
@@ -19,9 +18,7 @@ const mutations = {
 const actions = {
   // CREATE OR GET COURSE BY ID //
   async fetchCourse({ commit }, courseId) {
-    const response = await axios(
-      {url: getApiUrl(`course/${courseId}/`), method: 'GET'}
-    )
+    const response = await axios.get(`course/${courseId}/`)
 
     commit('setCourse', response.data)
   },
@@ -31,18 +28,16 @@ const actions = {
     let projectId = data.projectId
     let exerciseId = data.exerciseId
 
-    const response = await axios(
-      {url: getApiUrl(`course/${projectId}/`), method: 'PUT', data: {platformCourseExerciseId: exerciseId}}
-    )
+    const response = await axios.put(`course/${projectId}/`, {platformCourseExerciseId: exerciseId})
 
     commit('setCourse', response.data)
   },
 
   // GET LIST OF STARTED COURSES //
   async fetchUserCourses({ commit }) {
-    const response = await axios(
-      {url: getApiUrl(`courses/`), method: 'GET'}
-    )
+    const response = await axios.get(`courses/`)
+
+    console.log(response)
 
     commit('setUserCourses', response.data)
   }

@@ -5,16 +5,16 @@
                 <spinner></spinner>
             </div>
             
-            <span v-if="lessons.length < 1" v-for="exercise in exercises[0]">
-                        <section class="write-review py-5 bg-light" id="write-review">
-                        <div class="container">
+            
+                        <section v-if="lessons.length < 1" v-for="(exercise, index) in exercises" class="write-review py-5 bg-light" id="write-review">
+                        <div class="container-fluid">
                             <div class="row">
-                                <div class="col-md-4">
+                                <div class="col-md-5">
                                     <div class="row">
-                                        <div class="col-md-6">
+                                        <div class="col-md-12">
                                             <h5>{{ exercise.title }}</h5>
                                         </div>
-                                        <div class="col-md-6 text-warning">
+                                        <div class="col-md-12 text-warning">
                                             <div v-if="exercise.difficulty=='beginner'">
                                                 <i class="fa fa-star"></i>{{ exercise.difficulty }}
                                             </div>
@@ -35,16 +35,18 @@
                                     <hr>
                                     {{$t('keywords')}}:
                                     <span v-for="keyword in exercise.keywords">{{keyword}}</span>
+                                    <div>{{$t('module')}}: {{exercise.module}}</div>
                                 </div>
-                                <div class="col-md-8">
-                                    <router-link :to='$route.path + "/exercises/" + exercise.id' class="collapse-item btn btn-success" style="text-decoration:none;color:white;">
-                                        <i class="fas fa-running mr-1"></i><span>START</span>
+                                <div class="col-md-7">
+                                    <router-link :to='$route.path + "exercises/" + exercise.id' class="collapse-item btn btn-success" style="text-decoration:none;color:white;" exact v-on:click.native="changeExerciseIndex(exercise.title.charAt(0) - 1, exercise.module, index)">
+                                        <i class="fas fa-running mr-1"></i>
+                                        <span v-if="exercise.started === false || exercise.started === undefined">{{ $t('start') }}</span>
+                                        <span v-if="exercise.started === true">{{ $t('continue') }}</span>
                                     </router-link>
                                 </div>
                             </div>
                         </div>
                       </section><br/>
-            </span>
             
            
             <div v-if="lessons.length >0" class="card mb-4 py-3 border-bottom-info" v-for="lesson in lessons" :key="lesson.id">
@@ -88,7 +90,9 @@
                                 <div class="col-md-8">
                                     <button type="button" class="btn btn-success"><i class="fas fa-running mr-1"></i> 
                                         <router-link :to='$route.path+"/challenge/"+lesson.id+"/exercise/"+exercise.id' class="collapse-item" style="text-decoration:none;color:white;" v-on:click.native="updateLesson(lesson)"> 
-                                                START
+                                            <span v-if="exerciseStatus === 'notStarted'">START</span>
+                                            <span v-if="exerciseStatus === 'completed'">START</span>
+                                            <span v-if="exerciseStatus === 'inProgress'">CONTINUE</span>
                                         </router-link>
                                     </button>
                                 </div>
@@ -120,6 +124,7 @@ export default {
         exercises: [],
         loading_exercises: false,
         loading_challenges: false,
+        exerciseStatus: 'notStarted',
     }
   },
   
@@ -156,43 +161,55 @@ export default {
 
       this.exercises = [];
       let context = this;
-      //let project_id = this.$route.path.slice(10,46);
       context.$data.loading_exercises = true;
-      
-      axios.get('/exercises?page=1&limit=6', {
+      delete axios.defaults.headers.common['project']
+
+      axios.get(`exercises/${this.$route.params.projectId}`, {
 
       }).then(function(response) {
           context.$data.loading_exercises = false
           $store.state.exercisesWithinChallenge = []
-            for (let l = 0; l < response.data.data.length; l++){
+            for (let l = 0; l < response.data.length; l++){
               let arr = context.lessons[number].exercise_ids
-              $store.state.exercisesWithinChallenge.push(response.data.data[l].title)
-              if (arr.includes(response.data.data[l].id)){
-                context.exercises.push(response.data.data[l])
+              $store.state.exercisesWithinChallenge.push(response.data[l].title)
+              if (arr.includes(response.data[l].id)){
+                context.exercises.push(response.data[l])
               }  
-            };
+            }; 
         })  
     },
-
+    
     getExercisesWithoutLessons(){
       this.exercises = [];
       let context = this;
-      //let project_id = this.$route.path.slice(10,46);
       context.$data.loading_exercises = true;
 
-      axios.defaults.headers.common['project'] = context.$route.params.projectId
+      let id = context.$route.params.projectId
 
-      axios.get('/exercises?page=1&limit=6', {
-      }).then(function(response) {
+      axios.get(`exercises/${id}`).then(function(response) {
           context.$data.loading_exercises = false;
-          context.$data.exercises.push(response.data.data) 
-        })  
-    },
+          context.$data.exercises = response.data
+          
+          for(let i = 0; i < context.$data.exercises.length; i++){
+            if(context.$store.state.courses.course.exercises[i] != undefined){
+              context.$data.exercises[i].solved = context.$store.state.courses.course.exercises[i].solved
+              context.$data.exercises[i].started = context.$store.state.courses.course.exercises[i].started
+            }
+          }
 
+          context.$data.exercises.sort(function(a, b) {
+              return parseFloat(a.title.charAt(0)) - parseFloat(b.title.charAt(0));
+          });
+          context.$data.exercises.sort(function(a, b) {
+              return parseFloat(a.module.charAt(0)) - parseFloat(b.module.charAt(0));
+          });
+      })
+    },
+    
     getLessons(){
       let context = this;
 
-      axios.get('/challenges?filter=gl_id||eq||' + context.$route.params.lessonsId, {
+      axios.get('challenges/' + context.$route.params.lessonsId, {
         
       }).then(function(response) {
           context.$data.loading_challenges = false;
@@ -200,7 +217,27 @@ export default {
             context.lessons.push(response.data[l]);
           };
         })  
-      }         
+      },
+
+    changeExerciseIndex: function(index,name,oldIndex){
+        let context = this
+        $store.state.moduleIndex = name
+        let exercisesInModule = []
+        
+        for(let i = 0; i < this.exercises.length; i++){
+            if(this.exercises[i].module === name){
+                exercisesInModule.push(this.exercises[i])
+            }
+        }
+        
+        $store.state.exercisesWithinModule = exercisesInModule
+        if(isNaN(index)){
+          $store.state.exerciseIndex = oldIndex
+        }else{
+          $store.state.exerciseIndex = index
+        }
+    },
+             
   }
 };
 </script>

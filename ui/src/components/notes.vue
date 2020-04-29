@@ -33,7 +33,6 @@
 
 <script>
 import axios from "axios"
-import getApiUrl from "../store/urls"
 
 export default {
   name: "notes",
@@ -47,7 +46,7 @@ export default {
   methods: {
     addNote: function() {
       axios
-        .post(getApiUrl(`note/${this.exerciseId}/`), { note: this.newNote })
+        .post(`note/${this.exerciseId}/`, { note: this.newNote })
         .then(response => {
           this.notes.push(response.data)
           this.newNote = ""

@@ -1,0 +1,13 @@
+<title>Programming Education Platform</title>
+<link rel="icon" type="image/svg" href="<%= BASE_URL %>logo2.svg"/>
+<div id='app'></div>
+
+<script>
+let watcher = setInterval(function(){
+	if(localStorage.getItem('language') === 'en'){
+		document.title = 'Programming Education Platform';
+	}else{
+		document.title = 'Platforma Nauki Programowania';
+	}
+},500)
+</script>

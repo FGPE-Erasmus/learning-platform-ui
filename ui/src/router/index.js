@@ -1,11 +1,15 @@
 import Vue from 'vue'
 import Router from 'vue-router'
-import IDE from '@/components/IDE.vue'
-import lessons from '@/components/Lessons.vue'
+
+import emailConfirmation from '@/components/emailConfirmation.vue'
+import IDE from '@/components/ide.vue'
+import lessons from '@/components/lessons.vue'
 import login from '@/components/login.vue'
+import oauth from '@/components/oauth.vue'
 import register from '@/components/register.vue'
 import profile from '@/components/profile.vue'
 import profileEdit from '@/components/profileEdit.vue'
+import projects from '@/components/projects.vue'
 import App from '@/App.vue'
 
 Vue.use(Router)
@@ -15,27 +19,32 @@ const router = new Router({
 
   routes: [
     {
-      path: '/projects',
+      path: '/',
       component: App,
       name: 'projects',
       meta: {
-        requiresAuth: true
+        requiresAuth: true,
       },
       children: [
         {
-          path: ':projectId/lessons/:lessonsId',
+          path: 'projects/',
+          component: projects,
+          name: 'projectsList'
+        },
+        {
+          path: 'projects/:projectId/lessons/:lessonsId',
           component: lessons
         },
         {
-          path: ':projectId/',
+          path: 'projects/:projectId/',
           component: lessons
         },
         {
-          path: ':projectId/exercises/:exercisesId',
+          path: 'projects/:projectId/exercises/:exercisesId',
           component: IDE
         },
         {
-          path: ':projectId/lessons/:lessonsId/challenge/:challengeId/exercise/:exercisesId',
+          path: 'projects/:projectId/lessons/:lessonsId/challenge/:challengeId/exercise/:exercisesId',
           component: IDE
         },
         {
@@ -51,7 +60,7 @@ const router = new Router({
       ]
     },
     {
-      path: '/',
+      path: '/login',
       component: login,
       name: 'login'
     },
@@ -60,6 +69,16 @@ const router = new Router({
       component: register,
       name: 'register'
     },
+    {
+      path: '/emailConfirmation/:confirmToken',
+      component: emailConfirmation,
+      name: 'emailConfirmation'
+    },
+    {
+      path: '/oauth/:platform/',
+      component: oauth,
+      name: 'oauthLogin'
+    }
   ]
 })
 

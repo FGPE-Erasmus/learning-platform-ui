@@ -1,5 +1,4 @@
 import axios from 'axios'
-import getApiUrl from '../urls'
 
 const state = {
   exercise: {},
@@ -22,10 +21,7 @@ const actions = {
     let projectId = data.projectId
     let exerciseId = data.exerciseId
 
-    const response = await axios(
-      {url: getApiUrl(`exercise/${projectId}/${exerciseId}/`), method: 'GET'}
-    )
-
+    const response = await axios.get(`exercise/${projectId}/${exerciseId}/`)
     commit('setExercise', response.data)
   },
 
@@ -34,27 +30,21 @@ const actions = {
     let exerciseId = data.exerciseId
     let answer = data.answer
 
-    const response = await axios(
-      {url: getApiUrl(`exercise/${exerciseId}/`), method: 'PUT', data: answer}
-    )
+    const response = await axios.put(`exercise/${exerciseId}/` ,answer)
 
     commit('setExercise', response.data)
   },
 
   // SEND TIME ON EXERCISE //
   async updateExerciseTime({ commit }, {exerciseId, seconds}) {
-    const response = await axios(
-      {url: getApiUrl(`exercise-time/${exerciseId}/`), method: 'PUT', data: {time: seconds}}
-    )
+    const response = await axios.put(`exercise-time/${exerciseId}/`, {time: seconds})
 
     commit('setExercise', response.data)
   },
 
   // GET LIST OF USER STARTED EXERCISES //
   async fetchUserExercises({ commit }) {
-    const response = await axios(
-      {url: getApiUrl(`exercises/`), method: 'GET'}
-    )
+    const response = await axios.get(`exercises/`)
 
     commit('setUserExercises', response.data)
   }

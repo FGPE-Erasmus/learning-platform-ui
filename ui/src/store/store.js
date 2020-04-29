@@ -21,7 +21,6 @@ export default new Vuex.Store({
     exercise:[],
     status: '',
     token: localStorage.getItem('token') || '',
-    user : {},
     badge: '',
     email: '',
     interface_lang: '',
@@ -35,16 +34,18 @@ export default new Vuex.Store({
     tests_array: [],
     sortedInout: [],
     exercisesWithinChallenge: [],
+    exercisesWithinModule: [],
+    exerciseIndex: 0,
+    moduleIndex: 0,
   },
 
   mutations: {
     auth_request(state){
     state.status = 'loading'
   },
-  auth_success(state, token, user){
+  auth_success(state, token){
     state.status = 'success'
     state.token = token
-    state.user = user
   },
   auth_error(state){
     state.status = 'error'
@@ -62,8 +63,8 @@ export default new Vuex.Store({
     state.time_spent = user.time_spent
     state.ui_color = user.ui_color
   }
-
   },
+
   actions: {
     logout({commit}){
       return new Promise((resolve, reject) => {
@@ -71,17 +72,14 @@ export default new Vuex.Store({
         localStorage.removeItem('token')
         delete axios.defaults.headers.common['Authorization']
         resolve()
-        })
+      })
     },
 
     register({commit}, user){
       let who = user
       return new Promise((resolve, reject) => {
         commit('auth_request')
-        axios({url: 'http://fgpe.dcc.fc.up.pt:80/api/auth/register', data: user,headers : {
-                "Content-Type": "application/json",
-                "Accept": "application/json",
-            }, method: 'POST' })
+        axios.post('auth/register/', user)
         .then(resp => {
           const token = resp.data.accessToken
           const user = who
@@ -90,10 +88,10 @@ export default new Vuex.Store({
           resolve(resp)
         })
         .catch(err => {
-        commit('auth_error')
-        localStorage.removeItem('token')
-        reject(err)
-      })
+          commit('auth_error')
+          localStorage.removeItem('token')
+          reject(err)
+        })
       })
     },
 
@@ -101,24 +99,14 @@ export default new Vuex.Store({
       let who = user
       return new Promise((resolve, reject) => {
         commit('auth_request')
-        axios({url: 'http://fgpe.dcc.fc.up.pt:80/api/auth/login', data: user, method: 'POST' })
+        axios.post('auth/login/', user)
         .then(resp => {
           const token = resp.data.accessToken
           const user = who
-
           localStorage.setItem('token', token)
           localStorage.setItem('refreshToken', resp.data.refreshToken)
-
-          commit('auth_success', token, user)
+          commit('auth_success', token)
           axios.defaults.headers.common['Authorization'] = `Bearer ${localStorage.getItem('token')}`
-
-          axios.get(
-            `/users/me`
-          ).then(resp => {
-            axios(
-              {url: 'http://127.0.0.1:9000/api/user/', data: {userId: resp.data.id}, method: 'POST'}
-            ).catch(err => {})
-          })
           resolve(resp)
         })
         .catch(err => {
@@ -129,7 +117,16 @@ export default new Vuex.Store({
       })
       })
     },
+
+    oauthLogin({ commit }, data) {
+      localStorage.setItem('token', data.accessToken)
+      localStorage.setItem('refreshToken', data.refreshToken)
+
+      commit('auth_success', data.accessToken)
+      axios.defaults.headers.common['Authorization'] = `Bearer ${localStorage.getItem('token')}`
+    }
   },
+
   getters : {
     isAuthenticated: state => !!state.token
   },
@@ -140,4 +137,3 @@ export default new Vuex.Store({
     users
   }
 })
-

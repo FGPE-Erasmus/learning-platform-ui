@@ -22,8 +22,7 @@ let token = localStorage.getItem('token')
 if (token) {
   axios.defaults.headers.common['Authorization'] = `Bearer ${localStorage.getItem('token')}`
 }
-
-axios.defaults.baseURL = settings.fpge
+axios.defaults.baseURL = settings.api
 
 axios.defaults.headers.common['Access-Control-Allow-Origin'] = '*'
 axios.defaults.headers.common['Content-Type'] = 'application/json'
@@ -41,8 +40,9 @@ axios.interceptors.response.use((response) => {
       });
     }
     // Logout if there is problem with token refresh
-    if (error.config.url === 'http://fgpe.dcc.fc.up.pt:80/api/auth/refresh') {
+    if (error.config.url === `${settings.api}auth/refresh`) {
       localStorage.removeItem('token')
+      localStorage.removeItem('refreshToken')
       router.push('/')
 
       return new Promise((resolve, reject) => {
@@ -52,12 +52,20 @@ axios.interceptors.response.use((response) => {
     // Try refresh token if 'unauthorized'
     if (error.response.status === 401) {
       return new Promise((resolve, reject) => {
+        let refreshToken = localStorage.getItem('refreshToken')
+
+        let data = {
+          refreshToken: refreshToken,
+          grant_type: "refresh_token"
+        }
         axios
-          .post('/auth/refresh', { refreshToken: localStorage.getItem('refreshToken') })
+          .post(`/auth/token/refresh/`, data, {headers: {
+            Authorization: `Bearer ${refreshToken}`,
+          }})
           .then(response => {
             localStorage.setItem('token', response.data.accessToken)
+            axios.defaults.headers.common['Authorization'] = `Bearer ${localStorage.getItem('token')}`
             localStorage.setItem('refreshToken', response.data.refreshToken)
-            resolve(response.data.accessToken);
           })
           .catch((error) => {
             reject(error);
@@ -70,13 +78,14 @@ axios.interceptors.response.use((response) => {
 router.beforeEach((to, from, next) => {
   if (to.matched.some(record => record.meta.requiresAuth)) {
     if (!store.getters.isAuthenticated) {
-      next({ name: 'login' })
+      const loginPath = window.location.pathname
+      router.push({ name: 'login', query: { redirect: loginPath } })
     } else {
       next()
     }
   } else if (to.matched.some(record => record.meta.requiresLogged)) {
     if (store.getters.isAuthenticated) {
-      next({ name: 'login' })
+      router.push({ name: 'login', query: { redirect: loginPath } })
     } else {
       next()
     }
@@ -92,8 +101,3 @@ new Vue({
   VueCodeMirror,
   render: h => h(index)
 }).$mount("#app");
-
-
-
-
-
