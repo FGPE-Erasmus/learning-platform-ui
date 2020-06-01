@@ -28,7 +28,12 @@ const actions = {
     let projectId = data.projectId
     let exerciseId = data.exerciseId
 
-    const response = await axios.put(`course/${projectId}/`, {platformCourseExerciseId: exerciseId})
+    let payload = {
+      platformCourseExerciseId: exerciseId,
+      
+    }
+
+    const response = await axios.put(`course/${projectId}/`, {platformCourseExerciseId: exerciseId, module: 'asd'})
 
     commit('setCourse', response.data)
   },

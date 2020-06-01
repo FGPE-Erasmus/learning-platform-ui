@@ -14,7 +14,8 @@
             </tr>
             <tr>
               <td>{{($t('email'))}}</td>
-              <td>{{ this.getUserMe.username }}</td>
+              <td v-if="this.getUserMe.microsoft_mail != null">{{ this.getUserMe.microsoft_mail }}</td>
+              <td v-else>{{ this.getUserMe.username }}</td>
             </tr>
             <tr>
               <td>{{$t('lang')}}</td>

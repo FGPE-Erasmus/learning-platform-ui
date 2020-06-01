@@ -10,6 +10,7 @@ import register from '@/components/register.vue'
 import profile from '@/components/profile.vue'
 import profileEdit from '@/components/profileEdit.vue'
 import projects from '@/components/projects.vue'
+import admin from '@/components/admin.vue'
 import App from '@/App.vue'
 
 Vue.use(Router)
@@ -78,7 +79,16 @@ const router = new Router({
       path: '/oauth/:platform/',
       component: oauth,
       name: 'oauthLogin'
-    }
+    },
+    {
+      path: '/admin',
+      component: admin,
+      name: 'admin',
+      meta: {
+        //requiresAuth: true,
+        requiresAdmin: true,
+      },
+    },
   ]
 })
 

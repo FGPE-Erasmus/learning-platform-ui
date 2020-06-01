@@ -17,6 +17,9 @@ Vue.component('codemirror', VueCodeMirror);
 Vue.prototype.$http = axios;
 Vue.prototype.moment = moment
 
+import $store from "./store/store";
+import { mapGetters, mapActions } from "vuex"
+
 
 let token = localStorage.getItem('token')
 if (token) {
@@ -88,6 +91,27 @@ router.beforeEach((to, from, next) => {
       router.push({ name: 'login', query: { redirect: loginPath } })
     } else {
       next()
+    }
+  } else if(to.matched.some(record => record.meta.requiresAdmin)){
+      if (!store.getters.isAuthenticated) {
+      const loginPath = window.location.pathname
+      router.push({ name: 'login', query: { redirect: loginPath } })
+    } else if(store.getters.getUserMe.is_admin === undefined) {
+      store.dispatch('fetchUserMe').then(() => {
+        if(store.getters.getUserMe.is_admin === true){
+          next()
+        }else{
+          const loginPath = window.location.pathname
+          router.push({ name: 'login', query: { redirect: loginPath } })
+        }
+      });
+    }else{
+      if(store.getters.getUserMe.is_admin === true){
+          next()
+        }else{
+          const loginPath = window.location.pathname
+          router.push({ name: 'login', query: { redirect: loginPath } })
+        }
     }
   } else {
     next()

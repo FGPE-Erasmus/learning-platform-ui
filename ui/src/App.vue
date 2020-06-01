@@ -25,7 +25,7 @@
                     <div :id="'collapse'+lesson.id" class="collapse hide"  data-parent="#accordionSidebar">
                         <div class="bg-white py-2 collapse-inner rounded">
                             <div>
-                                <router-link :to='"/projects/"+project.id+"/exercises/"+exercise.id' v-for="(exercise, index) in getExercisesByModule(lesson.name)" :key="exercise.id" class="exercise collapse-item" exact-active-class="active" exact v-on:click.native="changeExerciseIndex(index,lesson.name)"
+                                <router-link :to='"/projects/"+project.id+"/exercises/"+exercise.id' v-for="(exercise, index) in getExercisesByModule(lesson.name)" :key="exercise.id" class="exercise collapse-item" exact-active-class="active" exact v-on:click.native="changeExerciseIndex(index,lesson.name,exercise.title)"
                                 style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                                     <div v-if="$store.state.courses.course.exercises != null" class="exercises"> 
                                         <span v-if="exercise.solved === false || exercise.solved === undefined" class="dot mr-2" style="background-color: red;"></span>
@@ -194,10 +194,11 @@ export default {
   },
 
   methods: {
-    ...mapActions(["updateUser", "fetchUserMe", "fetchCourse", "fetchUserCourses", "updateExerciseTime"]),
+    ...mapActions(["updateUser", "fetchUserMe", "fetchCourse", "fetchUserCourses", "updateExerciseTime", "updateUserLogin"]),
 
     setData: async function() {
         await this.fetchUserMe()
+        await this.updateUserLogin({logginTime: true})
 
         if(localStorage.getItem('exerciseId') != null && localStorage.getItem('seconds') != null && $store.getters.getUserMe.id == localStorage.getItem('fgpeId')){
             this.updateTime()
@@ -208,12 +209,14 @@ export default {
         
         if (projectId) {
             this.project = await this.getProject(projectId)
-
+            $store.state.currentProject = this.project.name
+            /*
             if (this.project.countGamificationLayers > 0) {
                 this.getLessons(this.project.id, this.project.name, this.project)
             } else {
                 this.getModules(this.project.id)
             }
+            */
             this.getModules(projectId)
         }
     },
@@ -247,6 +250,9 @@ export default {
         this.$data.exercisesSolvedAmount = exercisesSolved
         this.$data.exercisesAmount = response.data.length
         this.$data.progress = exercisesSolved / response.data.length * 100
+
+        $store.state.exercisesInProject = response.data
+
         return response.data
     },
 
@@ -263,7 +269,7 @@ export default {
             }
         }
         this.lessons.sort(function(a, b) {
-            return parseFloat(a.name.charAt(0)) - parseFloat(b.name.charAt(0));
+            return parseFloat(a.name.substring(0, 2)) - parseFloat(b.name.substring(0, 2));
         });
     },
 
@@ -276,7 +282,7 @@ export default {
             }
         }
         exercises.sort(function(a, b) {
-            return parseFloat(a.title.charAt(0)) - parseFloat(b.title.charAt(0));
+            return parseFloat(a.title.substring(0, 2)) - parseFloat(b.title.substring(0, 2));
         });
         this.changeExerciseIndexRefresh(this.module_name)
         return exercises
@@ -335,7 +341,7 @@ export default {
         })
     },
 
-    changeExerciseIndex: function(index,name){
+    changeExerciseIndex: function(index,name,exercise){
         let context = this
 
         $store.state.moduleIndex = name
@@ -349,6 +355,14 @@ export default {
         
         $store.state.exercisesWithinModule = exercisesInModule
         $store.state.exerciseIndex = index
+
+        let currentMeta = {
+            projectName: context.project.name,
+            moduleName: $store.state.moduleIndex,
+            exerciseName: exercise,
+        }
+
+        $store.state.currentMeta = currentMeta
     },
 
     changeExerciseIndexRefresh: function(name){
@@ -365,7 +379,7 @@ export default {
         }
 
         exercisesInModule.sort(function(a, b) {
-            return parseFloat(a.title.charAt(0)) - parseFloat(b.title.charAt(0));
+            return parseFloat(a.title.substring(0, 2)) - parseFloat(b.title.substring(0, 2));
         });
 
         for(let j = 0; j < exercisesInModule.length; j++){
@@ -375,6 +389,7 @@ export default {
         }
         $store.state.exercisesWithinModule = exercisesInModule
         $store.state.exerciseIndex = index
+
     },
 
     updateTime: function(){

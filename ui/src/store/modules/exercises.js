@@ -2,12 +2,13 @@ import axios from 'axios'
 
 const state = {
   exercise: {},
-  userExercises: []
+  userExercises: [],
+  exercisesInProject: [],
 }
 
 const getters = {
   getExercise: state => state.exercise,
-  getUserExercises: state => state.userExercises
+  getUserExercises: state => state.userExercises,
 }
 
 const mutations = {

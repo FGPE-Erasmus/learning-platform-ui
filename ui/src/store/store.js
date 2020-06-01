@@ -37,6 +37,8 @@ export default new Vuex.Store({
     exercisesWithinModule: [],
     exerciseIndex: 0,
     moduleIndex: 0,
+    currentMeta: {},
+    currentProject: '',
   },
 
   mutations: {

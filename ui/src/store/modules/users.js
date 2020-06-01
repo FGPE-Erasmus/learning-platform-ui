@@ -25,7 +25,12 @@ const actions = {
     localStorage.setItem('language', response.data.interface_lang)
 
     commit('setUserMe', response.data)
-  }
+  },
+
+  async updateUserLogin({ commit }, data) {
+    const response = await axios.put(`user/`, data)
+    commit('setUserMe', response.data)
+  },
 }
 
 export default { state, getters, mutations, actions }

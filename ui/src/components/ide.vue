@@ -284,6 +284,7 @@ data(){
         currentOutput: '',
         validatorInstructions: [],
         testsInstructions: [],
+        outputResult: '',
 
     }
 },
@@ -316,7 +317,8 @@ methods: {
         'sendExerciseAnswer',
         'updateExerciseTime',
         'setCoursePosition',
-        'fetchCourse'
+        'fetchCourse',
+        'updateUser',
     ]),
 
     logout: function(){
@@ -434,9 +436,17 @@ methods: {
     },
 
     sendAnswer: function() {
-        // Kod do wklejenia przy sprawdzaniu i przesyłaniu rozwiązania - TODO
       let answerData = {
-        answer: this.editor.getDoc().getValue()
+        answer: this.editor.getDoc().getValue(),
+        projectName: $store.state.currentMeta.projectName,
+        moduleName: $store.state.currentMeta.moduleName,
+        exerciseName: $store.state.currentMeta.exerciseName,
+        exerciseDescription: this.instructions
+      }
+
+      let userUpdate = {
+        number_of_attempts: 1,
+        solved_amount: false,
       }
       
       if (this.isCompleted === true) {
@@ -445,17 +455,19 @@ methods: {
                 if(this.$parent.exercises[i].id === this.$route.params.exercisesId && this.$parent.exercises[i].solved === false){
                     this.$parent.exercises[i].solved = true
                     this.$parent.exercisesSolvedAmount++
+                    userUpdate.solved_amount = true
                 }
            }
       }else if(this.isCompleted === false && $store.state.exercises.exercise.solved === true){
-          answerData.solved = true
+          answerData.solved = false
       }else if(this.isCompleted === false && $store.state.exercises.exercise.solved === false){
           answerData.solved = false
       }
 
+      this.updateUser(userUpdate)
       this.sendExerciseAnswer({exerciseId: this.$route.params.exercisesId, answer: answerData})
-
     },
+
 
     validateInstructions: function(){
         let context = this
@@ -551,7 +563,7 @@ methods: {
             alert('Stop running program first')
             return
         }
-        context.$data.tests_results = []
+
         $store.state.sortedInout = []
         context.$data.counter_tests = 0
         //VALIDATE SOURCE CODE WITH STATIC CORRECTORS
@@ -575,51 +587,32 @@ methods: {
             context.$data.comments_submit = comments
         }
         //IF VALIDATION PASS AND INPUT EXISTS AND TESTSETS NOT EMPTY
-        //if(comments.length == 0){
-        this.submitClicked = true
-        let i = 1
-        context.runit()
+        for(let x = 0; x < $store.state.sortedInout.length; x++){
+            let pattern = RegexParser($store.state.sortedInout[x].outArray)
+            try{
+                context.$data.outArrayResults.push(pattern.test(context.$data.outputResult))
+            }catch(err){
+                context.$data.comments_submit.push('Something wrong with validator, please contact your teacher')
+            }  
+        }
+        if(context.$data.outArrayResults.includes(false) || context.$data.outArrayResults.length === 0){
+            context.$data.comments_submit.push('Tests not passed')
+            context.$data.isCompleted = false
+        }else if(context.$data.comments_submit.length === 0){
+            context.$data.isCompleted = true
+            context.toggleButtonClass()
+        }
+        context.$data.outArrayResults = []
+        context.sendAnswer()
 
-        let interval = setInterval(function(){
-            if(context.$data.programStatus === 'finished' && i < $store.state.sortedInout.length){
-               context.runit();
-               i++ 
-            }
-            if(i === $store.state.sortedInout.length){
-                clearInterval(interval)
-                setTimeout(function(){
-                    for(let x = 0; x < $store.state.sortedInout.length; x++){
-                        let pattern = RegexParser($store.state.sortedInout[x].outArray)
-                        /*
-                        if(pattern.charAt(0) == '['){ pattern = pattern.slice(1,pattern.length - 1)}
-                        pattern = eval(pattern)
-                        */
-                        try{
-                            context.$data.outArrayResults.push(pattern.test(context.$data.tests_results[x]))
-                        }catch(err){
-                            console.log(err.message)
-                            context.$data.comments_submit.push('Something wrong with validator, please contact your teacher')
-                        }  
-                    }
-                    if(context.$data.outArrayResults.includes(false) || context.$data.outArrayResults.length === 0){
-                        context.$data.comments_submit.push('Tests not passed')
-                        context.$data.isCompleted = false
-                    }else if(context.$data.comments_submit.length === 0){
-                        context.$data.isCompleted = true
-                        context.toggleButtonClass()
-                    }
-                    context.$data.outArrayResults = []
-                    context.$data.submitClicked = false
-                    context.sendAnswer()
-                },100)
-            }
-        },50); 
         // IF EXERCISE TYPE = "SPOT BUG"
+        /*
         for(let j = 0; j < context.editor.lineCount(); j++){
             if (context.editor.lineInfo(j).gutterMarkers != null && context.editor.lineInfo(j).gutterMarkers != undefined) {
                 context.$data.linesSubmit.push(context.editor.lineInfo(j).line)
             }
-        }   
+        } 
+        */  
     },
 
     setCursor: function(){
@@ -734,7 +727,6 @@ methods: {
                 if(context.$data.try_counter > 0 ){
                     i =  context.$data.try_counter
                 }
-
                 context.$data.try_counter++
                 resolve(eval($store.state.sortedInout[context.$data.counter_tests].inArray)[i])      
             })
@@ -747,6 +739,7 @@ methods: {
         let context = this
 
         if(context.$data.inputStatus === 'unfinished' && context.$data.submitClicked === false){
+            context.$data.outputResult = context.output.getDoc().getValue()
             context.enterFake()
         }else if(context.$data.programStatus != 'running' && context.$data.submitClicked === false){
             context.runitHandler()
@@ -755,6 +748,7 @@ methods: {
         }else if(context.$data.programStatus != 'running' && context.$data.submitClicked === true){
             context.runitHandler()
         }else{
+            context.$data.outputResult = context.output.getDoc().getValue()
             Sk.break = true
             context.$data.programStatus = 'suspended'
             context.$data.iconRun = 'fas fa-play mr-1'
@@ -849,20 +843,12 @@ methods: {
                 context.$data.start = 'Start'
                 context.$data.inputCounter = 0
                 context.$data.temp_code = ''
-
                 context.output.getDoc().setValue(document.getElementById('output').innerHTML);
                 context.editor.getDoc().setValue(context.$data.temp_input)
-
                 context.$data.counter_tests++
-
-                if(context.$data.submitClicked === true){
-                   
-                    context.$data.tests_results.push(document.getElementById('output').innerHTML)
-                    context.output.getDoc().setValue('')
-                    context.$data.try_counter = 0
-                    document.getElementById('output').innerHTML = ''
-                    context.$data.testowa_tablica = []
-                }
+                context.$data.tests_results = document.getElementById('output').innerHTML
+                context.$data.try_counter = 0
+                context.$data.testowa_tablica = []
                 
                 if(context.$data.isInput === true){
                     let linesAmount = context.output.lineCount()
@@ -888,7 +874,8 @@ methods: {
                     context.$data.isFinishesInput = true
                     context.$data.isInput = false
                     context.$data.outputArray = []   
-                }            
+                }  
+                context.$data.outputResult = context.output.getDoc().getValue()          
             },
                 function(err){
                     context.$data.inputStatus = 'finished'
@@ -921,6 +908,7 @@ methods: {
                         context.$data.testowa_tablica = []
                     }
                     context.$data.history = ''
+                    context.$data.outputResult = context.output.getDoc().getValue()
                 });
     },
     // REPO API SIDE METHODS
@@ -1071,7 +1059,7 @@ methods: {
         axios.get('static-correctors/'+ pathname, {
         }).then(function(response) {
             let decodedString = context.b64DecodeUnicode(response.data);
-            context.$data.validatorInstructions = decodedString.match(/[^\r\n]+/g)
+            context.$data.validatorInstructions = decodedString.match(/[^\r\n]+/g)   
         })
     },
 
@@ -1083,7 +1071,7 @@ methods: {
         }).then(function(response) {
             let decodedString = context.b64DecodeUnicode(response.data);
             $store.state.tests_array = decodedString.match(/[^\r\n]+/g)
-            context.$data.testsInstructions = decodedString.match(/[^\r\n]+/g) 
+            context.$data.testsInstructions = decodedString.match(/[^\r\n]+/g)
         })
     },
 
@@ -1175,11 +1163,14 @@ methods: {
     changeExerciseIndexBackward: function(){
         if($store.state.exerciseIndex === 0){
             $store.state.exerciseIndex = 0
+            $store.state.currentMeta.exerciseName = $store.state.exercisesWithinModule[$store.state.exerciseIndex].title
         }else if($store.state.exerciseIndex < 0){
             $store.state.exerciseIndex = 0
+            $store.state.currentMeta.exerciseName = $store.state.exercisesWithinModule[$store.state.exerciseIndex].title
         }
         else{
             $store.state.exerciseIndex--
+            $store.state.currentMeta.exerciseName = $store.state.exercisesWithinModule[$store.state.exerciseIndex + 1].title
         }
         
     },
@@ -1187,8 +1178,10 @@ methods: {
     changeExerciseIndexForward: function(){
         if($store.state.exerciseIndex === $store.state.exercisesWithinModule.length-1){
             $store.state.exerciseIndex = $store.state.exerciseIndex
+            $store.state.currentMeta.exerciseName = $store.state.exercisesWithinModule[$store.state.exerciseIndex].title
         }else{
             $store.state.exerciseIndex++
+            $store.state.currentMeta.exerciseName = $store.state.exercisesWithinModule[$store.state.exerciseIndex - 1].title
         }
     },
 
@@ -1230,7 +1223,6 @@ methods: {
   width: 80px;
   height: 80px;
 }
-
 .lds-ring div {
   box-sizing: border-box;
   display: block;

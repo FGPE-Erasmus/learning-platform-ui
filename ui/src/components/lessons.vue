@@ -4,51 +4,47 @@
             <div v-if="loading_challenges" class="d-flex justify-content-center">
                 <spinner></spinner>
             </div>
-            
-            
-                        <section v-if="lessons.length < 1" v-for="(exercise, index) in exercises" class="write-review py-5 bg-light" id="write-review">
-                        <div class="container-fluid">
+            <div v-if="lessons.length < 1" v-for="(exercise, index) in exercises" class="write-review py-5 bg-light" id="write-review">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-md-5">
                             <div class="row">
-                                <div class="col-md-5">
-                                    <div class="row">
-                                        <div class="col-md-12">
-                                            <h5>{{ exercise.title }}</h5>
-                                        </div>
-                                        <div class="col-md-12 text-warning">
-                                            <div v-if="exercise.difficulty=='beginner'">
-                                                <i class="fa fa-star"></i>{{ exercise.difficulty }}
-                                            </div>
-                                            <div v-else-if="exercise.difficulty=='easy'">
-                                                <i class="fa fa-star"></i><i class="fa fa-star mr-1"></i> {{ $t('easy') }}
-                                            </div>
-                                            <div v-else-if="exercise.difficulty=='average'">
-                                                <i class="fa fa-star"></i><i class="fa fa-star mr-1"></i><i class="fa fa-star mr-1"></i> {{ $t('average') }}
-                                            </div>
-                                            <div v-else-if="exercise.difficulty=='hard'">
-                                                <i class="fa fa-star"></i><i class="fa fa-star mr-1"></i><i class="fa fa-star mr-1"></i><i class="fa fa-star mr-1"></i> {{ $t('hard') }}
-                                            </div>
-                                            <div v-else-if="exercise.difficulty=='master'">
-                                                <i class="fa fa-star"></i><i class="fa fa-star mr-1"></i><i class="fa fa-star mr-1"></i><i class="fa fa-star mr-1"></i><i class="fa fa-star mr-1"></i> {{ $t('master') }}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <hr>
-                                    {{$t('keywords')}}:
-                                    <span v-for="keyword in exercise.keywords">{{keyword}}</span>
-                                    <div>{{$t('module')}}: {{exercise.module}}</div>
+                                <div class="col-md-12">
+                                    <h5>{{ exercise.title }}</h5>
                                 </div>
-                                <div class="col-md-7">
-                                    <router-link :to='$route.path + "exercises/" + exercise.id' class="collapse-item btn btn-success" style="text-decoration:none;color:white;" exact v-on:click.native="changeExerciseIndex(exercise.title.charAt(0) - 1, exercise.module, index)">
-                                        <i class="fas fa-running mr-1"></i>
-                                        <span v-if="exercise.started === false || exercise.started === undefined">{{ $t('start') }}</span>
-                                        <span v-if="exercise.started === true">{{ $t('continue') }}</span>
-                                    </router-link>
+                                <div class="col-md-12 text-warning">
+                                    <div v-if="exercise.difficulty=='beginner'">
+                                        <i class="fa fa-star"></i>{{ exercise.difficulty }}
+                                    </div>
+                                    <div v-else-if="exercise.difficulty=='easy'">
+                                        <i class="fa fa-star"></i><i class="fa fa-star mr-1"></i> {{ $t('easy') }}
+                                    </div>
+                                    <div v-else-if="exercise.difficulty=='average'">
+                                        <i class="fa fa-star"></i><i class="fa fa-star mr-1"></i><i class="fa fa-star mr-1"></i> {{ $t('average') }}
+                                    </div>
+                                    <div v-else-if="exercise.difficulty=='hard'">
+                                        <i class="fa fa-star"></i><i class="fa fa-star mr-1"></i><i class="fa fa-star mr-1"></i><i class="fa fa-star mr-1"></i> {{ $t('hard') }}
+                                    </div>
+                                    <div v-else-if="exercise.difficulty=='master'">
+                                        <i class="fa fa-star"></i><i class="fa fa-star mr-1"></i><i class="fa fa-star mr-1"></i><i class="fa fa-star mr-1"></i><i class="fa fa-star mr-1"></i> {{ $t('master') }}
+                                    </div>
                                 </div>
                             </div>
+                            <hr>
+                            {{$t('keywords')}}:
+                            <span v-for="keyword in exercise.keywords">{{keyword}}</span>
+                            <div>{{$t('module')}}: {{exercise.module}}</div>
                         </div>
-                      </section><br/>
-            
-           
+                        <div class="col-md-7">
+                            <router-link :to='$route.path + "exercises/" + exercise.id' class="collapse-item btn btn-success" style="text-decoration:none;color:white;" exact v-on:click.native="changeExerciseIndex(exercise.title.charAt(0) - 1, exercise.module, index, exercise.title)">
+                                <i class="fas fa-running mr-1"></i>
+                                <span v-if="exercise.started === false || exercise.started === undefined">{{ $t('start') }}</span>
+                                <span v-if="exercise.started === true">{{ $t('continue') }}</span>
+                            </router-link>
+                        </div>
+                    </div>
+                </div>
+            </div><br/>
             <div v-if="lessons.length >0" class="card mb-4 py-3 border-bottom-info" v-for="lesson in lessons" :key="lesson.id">
                 <div class="card-body">
                     <button style="padding-left:0px;" class="btn btn-link" v-on:click="getExercises(lesson.id,lessons.indexOf(lesson),lesson.name)" data-toggle="collapse" :data-target="'#lesson'+lesson.id">{{ lesson.name }}</button>
@@ -135,15 +131,14 @@ export default {
   computed: mapGetters(["getCourse"]),
 
   created() {
-    this.fetchCourse(this.$route.params.projectId)
-  },
-
-  mounted(){
-    if(this.$route.path.includes('lessons')){
-      this.getLessons()
-    }else{
-      this.getExercisesWithoutLessons()
-    }
+    let context = this
+    this.loading_exercises = true
+    let interval = setInterval(function(){
+      if($store.state.exercisesInProject[0].project_id === context.$route.params.projectId){
+        context.getExercisesWithoutLessons()
+        clearInterval(interval)
+      }
+    },500)
   },
 
   methods: {
@@ -182,27 +177,14 @@ export default {
     getExercisesWithoutLessons(){
       this.exercises = [];
       let context = this;
-      context.$data.loading_exercises = true;
-
+      this.loading_exercises = false
       let id = context.$route.params.projectId
-
-      axios.get(`exercises/${id}`).then(function(response) {
-          context.$data.loading_exercises = false;
-          context.$data.exercises = response.data
-          
-          for(let i = 0; i < context.$data.exercises.length; i++){
-            if(context.$store.state.courses.course.exercises[i] != undefined){
-              context.$data.exercises[i].solved = context.$store.state.courses.course.exercises[i].solved
-              context.$data.exercises[i].started = context.$store.state.courses.course.exercises[i].started
-            }
-          }
-
-          context.$data.exercises.sort(function(a, b) {
-              return parseFloat(a.title.charAt(0)) - parseFloat(b.title.charAt(0));
-          });
-          context.$data.exercises.sort(function(a, b) {
-              return parseFloat(a.module.charAt(0)) - parseFloat(b.module.charAt(0));
-          });
+      this.exercises = $store.state.exercisesInProject
+      this.exercises.sort(function(a, b) {
+        return parseFloat(a.title.substring(0, 2)) - parseFloat(b.title.substring(0, 2))
+      })
+      this.exercises.sort(function(a, b) {
+        return parseFloat(a.module.substring(0, 2)) - parseFloat(b.module.substring(0, 2))
       })
     },
     
@@ -219,7 +201,7 @@ export default {
         })  
       },
 
-    changeExerciseIndex: function(index,name,oldIndex){
+    changeExerciseIndex: function(index,name,oldIndex,exercise){
         let context = this
         $store.state.moduleIndex = name
         let exercisesInModule = []
@@ -236,6 +218,13 @@ export default {
         }else{
           $store.state.exerciseIndex = index
         }
+
+        let currentMeta = {
+            projectName: $store.state.currentProject,
+            moduleName: name,
+            exerciseName: exercise,
+        }
+        $store.state.currentMeta = currentMeta
     },
              
   }

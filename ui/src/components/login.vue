@@ -90,6 +90,7 @@
 import axios from "axios";
 import $store from "./../store/store";
 import $i18n  from "./../plugins/i18n.js"
+import { mapGetters, mapActions } from "vuex"
 
 export default {
   name: "login",
@@ -112,6 +113,8 @@ export default {
   },
 
   methods: {
+    ...mapActions(["fetchUserMe", "updateUser"]),
+
     changeLanguage: function(){
       if($i18n.locale == 'en'){
         $i18n.locale = 'pl'
