@@ -66,6 +66,7 @@ import $store from "./../store/store";
 import $i18n  from "./../plugins/i18n.js"
 import { mapGetters, mapActions } from "vuex"
 import $ from 'jquery';
+import moment from 'moment'
 import dt from 'datatables.net';
 import './../packages/DataTables/dataTables.bootstrap4.js'
 
@@ -84,8 +85,9 @@ export default {
   },
 
   mounted() {
-    this.dt = $('#dataTable').DataTable({autoWidth: false})
-    this.formatTime()
+    this.dt = $('#dataTable').DataTable({
+      autoWidth: false,
+    })
   },
 
   methods: {
@@ -95,7 +97,8 @@ export default {
       
       for(let i = 0; i < this.users.length; i++){
         this.users[i].time_spent_seconds = this.formatTime(this.users[i].time_spent_seconds)
-        this.users[i].last_login = new Date(this.users[i].last_login).toLocaleString() 
+        this.users[i].last_login = new Date(this.users[i].last_login)
+        this.users[i].last_login = moment(this.users[i].last_login).format('YYYY-MM-DD, hh:mm:ss')
       }
       
       this.dt.destroy();
@@ -112,8 +115,12 @@ export default {
     },
 
     formatTime: function(seconds){
-        let time = (Math.floor(seconds / 3600)) + ":" + ("0" + Math.floor(seconds / 60) % 60).slice(-2) + ":" + ("0" + seconds % 60).slice(-2)
-        return time
+      let time = new Date(1970,0,1);
+      time.setSeconds(seconds);
+      let format = time.toTimeString().substr(0,8);
+      if(seconds > 86399)
+          format = Math.floor((time - Date.parse('1/1/70')) / 3600000) + format.substr(2);
+      return format;
     },
 
     format: function(submission,index){
@@ -125,7 +132,7 @@ export default {
                 '<td style="width:10vw;vertical-align:top;"><div class="entry">'+ submission[i].module_name +'</div></td>'+
                 '<td style="width:10vw;vertical-align:top;"><div class="entry">'+ submission[i].exercise_name +'</div></td>'+
                 '<td style="width:10vw;vertical-align:top;"><div class="entry">'+ submission[i].exercise_description +'</div></td>'+
-                '<td style="width:10vw;vertical-align:top;"><div class="entry">'+ submission[i].last_answer +'</div></td>'+
+                '<td style="width:10vw;vertical-align:top;"><code><div class="entry">'+ submission[i].last_answer +'</div></code></td>'+
                 '<td style="width:10vw;vertical-align:top;"><div class="entry">'+ submission[i].last_good_answer +'</div></td>'+
                 '<td style="width:5vw;vertical-align:top;"><div class="entry">'+ submission[i].number_of_attempts +'</div></td>'+
                 '<td style="width:5vw;vertical-align:top;"><div class="entry">'+ submission[i].solved +'</div></td>'+

@@ -807,7 +807,7 @@ methods: {
                 debugging: true,
                 inputfun: context.inputFunction,
                 inputfunTakesPrompt: true,
-                //future: Sk.python3
+                __future__: Sk.python3
             }); 
 
             let susp_handlers = {};
